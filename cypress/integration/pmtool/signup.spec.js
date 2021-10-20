@@ -46,11 +46,6 @@ describe('Test cases for signup page', () => {
     cy.get('.card.blue-grey.darken-1')
       .should('have.text','Verify your accountSuccessfull registration, login to start using PPMTool')
       .and('be.visible')
-
-    
-
-    // cy.get('.material-icons.prefix')
-    //   .should('have.css', 'color','rgb(38, 166, 154)')
   })
 
   it('should trigger error message and signup user with the 3 mandatory fields', () => {

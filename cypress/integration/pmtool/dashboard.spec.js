@@ -1,13 +1,14 @@
 /// <reference types="cypress" />
 const email  = () => Cypress._.random(0, 1e6)
 const filepath = '/example.json'
-const dataTransfer = new DataTransfer;
 
 describe('Test cases for dashboard page', () => {
   beforeEach(() => {
     cy.intercept('POST', '/api/login').as('login')
     cy.intercept('POST', '/api/projects').as('postProject')
     cy.intercept('POST', '/api/projects/*/tasks').as('postTask')
+    cy.intercept('GET', '/api/projects/*/tasks').as('getTasks')
+    cy.intercept('GET', '/api/searchtasks?data=a_sum').as('searchTask')
 
     cy.visit('https://node-fs-app.herokuapp.com/')
 
@@ -73,7 +74,7 @@ describe('Test cases for dashboard page', () => {
 
   })
 
-  it.only('should create a new task', () => {
+  it('should create a new task', () => {
     var project_id;
 
     cy.get('#btn_add_task')
@@ -173,27 +174,61 @@ describe('Test cases for dashboard page', () => {
       .find('#btn_delete_task')
       .should('be.visible')
       .and('contain', 'delete')
-
-  //     cy.get('.card.blue-grey.darken-1')
-  //     .trigger('dragstart', { dataTransfer });
-
-  // cy.get('#in_review_items')
-  //     .trigger('drop', { dataTransfer });
-
-  // cy.get('.card.blue-grey.darken-1')
-  //     .trigger('dragend');
-
-  // cy.get('#in_review_items')
-  //   .find('card.blue-grey.darken-1')
-
-  cy.get('.card.blue-grey.darken-1').drag('#in_review_items')
-
-    cy.get('#in_review_items')
-    .find('card.blue-grey.darken-1')
-
   })
 
-  it('should create a new task', () => {
+  it.skip('should create second task and check task db', () => {
+    cy.visit('https://node-fs-app.herokuapp.com/dashboard')
+
+    cy.get('#btn_add_task')
+      .click()
+    
+    cy.get('#summary')
+      .focus()
+      .type('a_sum')
+
+    cy.get('#description')
+      .focus()
+      .type('description')
+    
+    cy.get('.select-wrapper')
+      .click()
+
+    cy.contains('IN PROGRESS')
+      .click()
+
+    cy.get('#search_input')
+      .focus()
+
+    cy.contains('backend')
+      .click()
+
+    cy.get('.btn.waves-effect.waves-light')
+      .click()
+      .wait('@postTask')
+      .wait('@getTasks')
+
+    cy.get('#task_db')
+      .should('have.text','TaskDB')
+      .click()
+
+    cy.url().should('eq', 'https://node-fs-app.herokuapp.com/tasks/db')
+
+    cy.get('.col.s3')
+      .children()
+      .should('have.length', 2)
+
+    cy.get('#search')
+      .focus()
+      .type('a_sum')
+      .wait('@searchTask')
+
+    cy.get('.col.s3')
+      .children()
+      .should('have.length', 1)
+  })
+
+
+  it('should delete a task', () => {
     cy.visit('https://node-fs-app.herokuapp.com/dashboard')
 
     cy.get('#btn_view_tasks')
@@ -206,4 +241,17 @@ describe('Test cases for dashboard page', () => {
       .should('not.exist')
   })
 
+  it('should delete a project', () => {
+    cy.visit('https://node-fs-app.herokuapp.com/dashboard')
+
+    cy.get('#delete_project')
+      .click()
+
+    cy.get('.card-action')
+      .should('not.exist')
+    
+    cy.get('.card-title')
+      .siblings()
+      .should('contain', 'There are no projects created yet. Start by creating some!')
+  })
 })
